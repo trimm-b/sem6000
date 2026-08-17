@@ -125,6 +125,61 @@ sem6000 off
 sem6000 on
 ```
 
+## Raspberry Pi
+
+A Pi is the natural home for this: it can sit next to the plug and log
+continuously. Everything below is verified against **bleak 0.20.2**, the
+version Debian 12 / Raspberry Pi OS Bookworm ships, so you can use the distro
+package and build nothing.
+
+```bash
+sudo apt install python3-bleak python3-pip
+pip install --break-system-packages --no-deps -e .
+```
+
+Or, if you prefer a venv that can still see the distro's bleak:
+
+```bash
+python3 -m venv --system-site-packages /opt/sem6000/venv
+/opt/sem6000/venv/bin/pip install -e .
+```
+
+`--system-site-packages` matters on 32-bit Pi OS: `bleak` pulls in `dbus-fast`,
+which has prebuilt wheels for `aarch64` but may need a compiler on `armv7l`.
+Reusing the distro package sidesteps that entirely.
+
+Requirements are modest — Bookworm's Python 3.11 and BlueZ 5.66 are both fine.
+The user running it needs to be in the `bluetooth` group; no root, no
+capabilities, because BlueZ is reached over D-Bus.
+
+### Running it unattended
+
+[`deploy/`](deploy/) has systemd units for the logger and the exporter:
+
+```bash
+sudo cp deploy/sem6000-*.service /etc/systemd/system/
+sudo systemctl edit sem6000-logger      # set SEM6000_ADDRESS
+sudo systemctl enable --now sem6000-logger
+```
+
+> **One connection at a time.** The SEM6000 accepts a single BLE client. Run
+> the logger *or* the exporter against a plug, not both, and expect the
+> Voltcraft phone app to take the link away while it is open.
+>
+> A second client does not queue politely — it **takes over**, because this
+> library drops the stale link to work around the fact that a connected plug
+> stops advertising. So running `sem6000 status` by hand will bump a running
+> logger off. That is survivable: the logger reconnects with backoff and skips
+> integration across the gap rather than inventing energy for unmeasured time
+> (verified by stealing the connection from a live logger). You just lose a
+> sample or two.
+>
+> Pass `auto_disconnect_stale=False` to `SEM6000(...)` for a client that
+> refuses to steal rather than one that takes over.
+
+Keep the Pi within a few metres of the plug; these are low-power radios and
+`sem6000 discover` reports RSSI if you want to check.
+
 ## Python API
 
 ```python

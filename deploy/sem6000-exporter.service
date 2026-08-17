@@ -1,0 +1,40 @@
+# Serve Prometheus metrics for the plug.
+#
+#   sudo systemctl enable --now sem6000-exporter
+#   curl http://<pi>:9110/metrics
+#
+# Run this OR the logger, not both against one plug - the SEM6000 accepts a
+# single BLE connection at a time and the two will fight over it.
+
+[Unit]
+Description=SEM6000 Prometheus exporter
+Documentation=https://github.com/trimm-b/sem6000
+After=bluetooth.target network.target
+Requires=bluetooth.target
+
+[Service]
+Type=simple
+User=sem6000
+Group=bluetooth
+
+Environment=SEM6000_ADDRESS=AA:BB:CC:DD:EE:FF
+# Environment=SEM6000_PIN=0000
+
+ExecStart=/opt/sem6000/venv/bin/sem6000 export \
+    --port 9110 \
+    --interval 10
+
+Restart=always
+RestartSec=15
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_BLUETOOTH AF_INET AF_INET6
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

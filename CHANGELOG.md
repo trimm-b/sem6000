@@ -4,6 +4,32 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Lowered the `bleak` floor from `>=0.21` to `>=0.20`, so Debian 12 and
+  Raspberry Pi OS Bookworm can use the distro `python3-bleak` (0.20.2) instead
+  of building anything. The library only needs APIs present since 0.20; the
+  full suite and a live device session were verified on 0.20.2 and on 3.x.
+- `--address`, `--pin` and `--json` are accepted before *or* after the
+  subcommand. Previously only the global position worked, while the
+  missing-address error told the user to pass `--address` — which then failed.
+  Subcommand `-h` now lists them too.
+
+### Added
+
+- Raspberry Pi installation and deployment notes.
+- systemd units for the logger and the exporter in [`deploy/`](deploy/).
+- `tests/test_cli.py`: every subcommand against every global option in both
+  positions.
+
+### Documented
+
+- The plug accepts a **single BLE connection**, and a second client takes the
+  link over rather than being refused. The logger recovers from this on its
+  own; `auto_disconnect_stale=False` opts out of taking over.
+
 ## [0.1.0] - 2026-08-17
 
 First release. Developed and verified against a SEM6000 CH (`VOLCFT`,

@@ -9,10 +9,21 @@ description = "Async Python API for the Voltcraft SEM6000 Bluetooth smart plug"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-dependencies = ["bleak>=0.21"]
+
+# 0.20 is the floor because that is what Debian 12 / Raspberry Pi OS Bookworm
+# ships as python3-bleak (0.20.2), letting the Pi use the distro package
+# instead of building anything. The library only needs BleakClient,
+# BleakScanner.find_device_by_address, discover(return_adv=True) and
+# BleakDeviceNotFoundError, all present since 0.20. Tested against both
+# 0.20.2 and 3.x.
+dependencies = ["bleak>=0.20"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7", "pytest-asyncio>=0.21"]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/trimm-b/sem6000"
+Protocol = "https://github.com/trimm-b/sem6000/blob/master/PROTOCOL.md"
 
 [project.scripts]
 sem6000 = "sem6000.cli:main"

@@ -1,0 +1,45 @@
+# Record plug measurements to SQLite continuously.
+#
+#   sudo cp deploy/sem6000-*.service /etc/systemd/system/
+#   sudo systemctl edit sem6000-logger      # set Environment=SEM6000_ADDRESS=...
+#   sudo systemctl enable --now sem6000-logger
+#
+# Runs as an unprivileged user: BlueZ is reached over D-Bus, so no root and no
+# capabilities are needed. The user must be in the "bluetooth" group.
+
+[Unit]
+Description=SEM6000 power logger
+Documentation=https://github.com/trimm-b/sem6000
+After=bluetooth.target network.target
+Requires=bluetooth.target
+
+[Service]
+Type=simple
+User=sem6000
+Group=bluetooth
+StateDirectory=sem6000
+
+Environment=SEM6000_ADDRESS=AA:BB:CC:DD:EE:FF
+# Environment=SEM6000_PIN=0000
+
+ExecStart=/opt/sem6000/venv/bin/sem6000 log \
+    --sqlite /var/lib/sem6000/power.db \
+    --interval 10
+
+# BLE links drop; the logger already reconnects internally, but restart anyway
+# if the process itself dies.
+Restart=always
+RestartSec=15
+
+# The plug is the only thing this needs to reach.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_BLUETOOTH
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target
