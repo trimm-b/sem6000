@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+.venv/
+venv/
+env/
+
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Recorded measurements
+*.db
+*.sqlite
+*.sqlite3
+power*.csv
+
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local planning notes, not part of the published project
+vision.md

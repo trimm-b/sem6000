@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sem6000"
+version = "0.1.0"
+description = "Async Python API for the Voltcraft SEM6000 Bluetooth smart plug"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = ["bleak>=0.21"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-asyncio>=0.21"]
+
+[project.scripts]
+sem6000 = "sem6000.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sem6000*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
