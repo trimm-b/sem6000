@@ -296,8 +296,16 @@ sem6000 set-pin 4271                # change from the 0000 default
 sem6000 reset-pin                   # back to 0000
 ```
 
-`--json` works on `status`, `energy` and `history`, in either position.
-`--address` / `--pin` override `SEM6000_ADDRESS` / `SEM6000_PIN`.
+`--address`, `--pin` and `--json` work **before or after** the subcommand, so
+both of these are fine:
+
+```bash
+sem6000 --address AA:BB:CC:DD:EE:FF status
+sem6000 status --address AA:BB:CC:DD:EE:FF
+```
+
+`--address` / `--pin` override `SEM6000_ADDRESS` / `SEM6000_PIN`. `--json`
+applies to `status`, `energy` and `history`.
 
 ## Monitoring
 

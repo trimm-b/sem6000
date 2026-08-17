@@ -260,64 +260,79 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--json", action="store_true", help="machine-readable output")
 
-    # Repeat --json on the subcommands so it works in either position;
-    # argparse otherwise accepts only "sem6000 --json status", and everyone
-    # reaches for "sem6000 status --json" first.
-    # SUPPRESS keeps the subcommand from writing a default False over a --json
-    # that was given globally; the attribute appears only when actually passed.
+    # argparse only accepts options before the subcommand, but people reach for
+    # "sem6000 set-pin 1234 --address ..." first - and the missing-address error
+    # tells them to pass --address, which then fails. So every global option is
+    # repeated on every subcommand.
+    #
+    # SUPPRESS matters: without it the subcommand's default would overwrite a
+    # value given globally (or from the environment). With it, the attribute
+    # only appears when the flag was actually typed after the subcommand.
     common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
+        "--address",
+        default=argparse.SUPPRESS,
+        help=f"Bluetooth MAC address (default: ${ENV_ADDRESS})",
+    )
+    common.add_argument(
+        "--pin",
+        default=argparse.SUPPRESS,
+        help=f"4-digit PIN (default: ${ENV_PIN} or {DEFAULT_PIN})",
+    )
     common.add_argument(
         "--json",
         action="store_true",
         default=argparse.SUPPRESS,
-        help=argparse.SUPPRESS,
+        help="machine-readable output",
     )
 
     sub = ap.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("status", help="show the current reading", parents=[common])
-    sub.add_parser("on", help="switch the socket on")
-    sub.add_parser("off", help="switch the socket off")
-    sub.add_parser("toggle", help="flip the socket")
-    sub.add_parser("settings", help="show device configuration")
-    sub.add_parser(
-        "sync-time",
-        help="set the device clock (required before it will log history)",
-    )
+    def add(name: str, **kw):
+        """Every subcommand accepts the global options in either position."""
+        return sub.add_parser(name, parents=[common], **kw)
 
-    d = sub.add_parser("discover", help="scan for plugs in range")
+    add("status", help="show the current reading")
+    add("on", help="switch the socket on")
+    add("off", help="switch the socket off")
+    add("toggle", help="flip the socket")
+    add("settings", help="show device configuration")
+    add("sync-time",
+        help="set the device clock (required before it will log history)")
+
+    d = add("discover", help="scan for plugs in range")
     d.add_argument("--timeout", type=float, default=10.0)
 
-    w = sub.add_parser("watch", help="stream live readings")
+    w = add("watch", help="stream live readings")
     w.add_argument("--interval", type=float, default=1.0)
 
-    e = sub.add_parser("energy", help="integrate power over a window", parents=[common])
+    e = add("energy", help="integrate power over a window")
     e.add_argument("duration", type=float, help="seconds to measure")
     e.add_argument("--interval", type=float, default=1.0)
     e.add_argument("--price", type=float, help="price per kWh, to report cost")
 
-    h = sub.add_parser("history", help="stored energy history", parents=[common])
+    h = add("history", help="stored energy history")
     h.add_argument("period", choices=["hour", "day", "month"])
 
-    led = sub.add_parser("led", help="turn the LED ring on or off")
+    led = add("led", help="turn the LED ring on or off")
     led.add_argument("state", choices=["on", "off"])
 
-    lim = sub.add_parser("set-limit", help="set the overload cutoff in watts")
+    lim = add("set-limit", help="set the overload cutoff in watts")
     lim.add_argument("watts", type=int)
 
-    sp = sub.add_parser("set-pin", help="change the login PIN")
+    sp = add("set-pin", help="change the login PIN")
     sp.add_argument("new_pin", help="the new 4-digit PIN")
 
-    sub.add_parser("reset-pin", help=f"reset the PIN to {DEFAULT_PIN}")
+    add("reset-pin", help=f"reset the PIN to {DEFAULT_PIN}")
 
-    lg = sub.add_parser("log", help="record measurements to disk over time")
+    lg = add("log", help="record measurements to disk over time")
     lg.add_argument("--csv", help="append rows to this CSV file")
     lg.add_argument("--sqlite", help="append rows to this SQLite database")
     lg.add_argument("--stdout", action="store_true", help="also print each row")
     lg.add_argument("--interval", type=float, default=5.0)
     lg.add_argument("--duration", type=float, help="stop after N seconds")
 
-    ex = sub.add_parser("export", help="serve Prometheus metrics")
+    ex = add("export", help="serve Prometheus metrics")
     ex.add_argument("--port", type=int, default=9110)
     ex.add_argument("--host", default="0.0.0.0")
     ex.add_argument("--interval", type=float, default=5.0)
